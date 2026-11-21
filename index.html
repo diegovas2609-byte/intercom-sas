@@ -79,4 +79,75 @@ async function agregarProducto(e) {
         b.disabled = false;
     }
 }
+ const inventarioAnterior = sellerAction;
+
+sellerAction = async function(a) {
+    await inventarioAnterior(a);
+
+    if (!seller || a !== 'inventario') return;
+
+    $('sellerContent').insertAdjacentHTML('beforeend', `
+        <h3>📦 Aumentar stock</h3>
+
+        <form class="form" onsubmit="aumentarStock(event)">
+
+            <label>Seleccionar producto</label>
+
+            <select name="producto" required>
+                ${products.map(p => `
+                    <option value="${Number(p.id)}">
+                        ${esc(p.nombre)} - Stock: ${p.stock}
+                    </option>
+                `).join('')}
+            </select>
+
+            <label>Cantidad de unidades nuevas</label>
+
+            <input name="cantidad"
+                   type="number"
+                   min="1"
+                   step="1"
+                   required>
+
+            <button>Aumentar stock</button>
+
+        </form>
+    `);
+};
+
+async function aumentarStock(e) {
+
+    e.preventDefault();
+    if (!seller) return;
+
+    const f = e.target;
+    const b = f.querySelector('button');
+    b.disabled = true;
+
+    try {
+
+        const cantidad = Number(f.cantidad.value);
+
+        if (!Number.isInteger(cantidad) || cantidad <= 0) {
+            throw new Error('Cantidad inválida');
+        }
+
+        const nuevoStock = check(
+            await api.rpc('aumentar_stock', {
+                p_producto_id: Number(f.producto.value),
+                p_cantidad: cantidad
+            })
+        );
+
+        alert('Stock actualizado correctamente. Total: '
+              + nuevoStock + ' unidades');
+
+        await sellerAction('inventario');
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        b.disabled = false;
+    }
+}
 </script></body></html>
