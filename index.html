@@ -150,4 +150,73 @@ async function aumentarStock(e) {
         b.disabled = false;
     }
 }
+
+ const inventarioConStock = sellerAction;
+
+sellerAction = async function(a) {
+    await inventarioConStock(a);
+
+    if (!seller || a !== 'inventario') return;
+
+    $('sellerContent').insertAdjacentHTML('beforeend', `
+        <h3>💰 Modificar precio</h3>
+
+        <form class="form" onsubmit="modificarPrecio(event)">
+
+            <label>Seleccionar producto</label>
+
+            <select name="producto" required>
+                ${products.map(p => `
+                    <option value="${Number(p.id)}">
+                        ${esc(p.nombre)} - ${money(p.precio)}
+                    </option>
+                `).join('')}
+            </select>
+
+            <label>Nuevo precio en pesos</label>
+
+            <input name="precio"
+                   type="number"
+                   min="1"
+                   step="1"
+                   required>
+
+            <button>Actualizar precio</button>
+
+        </form>
+    `);
+};
+
+async function modificarPrecio(e) {
+    e.preventDefault();
+
+    if (!seller) return;
+
+    const f = e.target;
+    const b = f.querySelector('button');
+    b.disabled = true;
+
+    try {
+        const precio = Number(f.precio.value);
+
+        if (!Number.isSafeInteger(precio) || precio <= 0) {
+            throw new Error('Precio inválido');
+        }
+
+        check(await api.from('productos')
+            .update({ precio: precio })
+            .eq('id', Number(f.producto.value))
+            .select('id')
+            .single());
+
+        alert('Precio actualizado correctamente');
+
+        await sellerAction('inventario');
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        b.disabled = false;
+    }
+}
 </script></body></html>
